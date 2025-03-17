@@ -1,8 +1,11 @@
+//go:build js && wasm
+
 package main
 
 import (
 	"fmt"
 	"math"
+	"syscall/js"
 	// "os"
 	// "runtime/pprof"
 )
@@ -105,17 +108,35 @@ func findOptimalTurbine(fitnessFunction func(Turbine) float64, constraintsFuncti
 	return bestTurbine
 }
 
-func main() {
-	coilType := coilTypes["Ludicrite"]
-	fitnessFunction := func(turbine Turbine) float64 {
-		return turbine.energyGeneratedLastTick
-	}
-	constraintsFunction := func(turbine Turbine) bool {
-		return true
-	}
-	maxSize := Size{32, 50, 32}
-	turbine := findOptimalTurbine(fitnessFunction, constraintsFunction, coilType, FlowSetting{FindBestFlow, 1000}, maxSize)
+func optimizerWrapper() js.Func {
+	jsonFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) != 1 {
+			return "Invalid no of arguments passed"
+		}
 
-	turbine.PrintStats()
-	turbine.PrintBuildCost()
+		coilMaterial := args[0].String()
+		coilType := coilTypes[coilMaterial]
+		fitnessFunction := func(turbine Turbine) float64 {
+			return turbine.energyGeneratedLastTick
+		}
+		constraintsFunction := func(turbine Turbine) bool {
+			return true
+		}
+		maxSize := Size{10, 50, 10}
+
+		turbine := findOptimalTurbine(fitnessFunction, constraintsFunction, coilType, FlowSetting{UseMaxFlow, 0}, maxSize)
+
+		turbine.PrintStats()
+		turbine.PrintBuildCost()
+
+		return turbine
+	})
+
+	return jsonFunc
+
+}
+
+func main() {
+	js.Global().Set("runOptimizer", optimizerWrapper())
+	<-make(chan struct{})
 }
