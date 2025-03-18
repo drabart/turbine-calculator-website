@@ -110,26 +110,50 @@ func findOptimalTurbine(fitnessFunction func(Turbine) float64, constraintsFuncti
 
 func optimizerWrapper() js.Func {
 	jsonFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
-		if len(args) != 1 {
+		// fmt.Println(len(args))
+		if len(args) != 4 {
 			return "Invalid no of arguments passed"
 		}
 
-		coilMaterial := args[0].String()
+		maxWidth := args[0].Int()
+		maxHeight := args[1].Int()
+
+		coilMaterial := args[2].String()
 		coilType := coilTypes[coilMaterial]
+
+		flowValue := args[3].Int()
+
 		fitnessFunction := func(turbine Turbine) float64 {
 			return turbine.energyGeneratedLastTick
 		}
 		constraintsFunction := func(turbine Turbine) bool {
 			return true
 		}
-		maxSize := Size{10, 50, 10}
+		maxSize := Size{int32(maxWidth), int32(maxHeight), int32(maxWidth)}
 
-		turbine := findOptimalTurbine(fitnessFunction, constraintsFunction, coilType, FlowSetting{UseMaxFlow, 0}, maxSize)
+		turbine := findOptimalTurbine(fitnessFunction, constraintsFunction, coilType, FlowSetting{UseMaxFlow, int64(flowValue)}, maxSize)
 
-		turbine.PrintStats()
-		turbine.PrintBuildCost()
+		// turbine.PrintStats()
+		// turbine.PrintBuildCost()
 
-		return turbine
+		turbineGoToJS := js.FuncOf(func(this js.Value, args []js.Value) any {
+			this.Set("width", turbine.size.x+2)
+			this.Set("height", turbine.size.y+2)
+			this.Set("rpm", turbine.RPM())
+			this.Set("coilSize", turbine.coilSize)
+			this.Set("flowRate", turbine.maxFlowRate)
+			this.Set("maxFlowRate", turbine.maxMaxFlowRate)
+			this.Set("rotorShafts", turbine.rotorShafts)
+			this.Set("energyGenerated", turbine.energyGeneratedLastTick)
+			this.Set("rotorEfficiency", turbine.rotorEfficiencyLastTick)
+			this.Set("inductorDrag", turbine.inductorDragLastTick)
+			this.Set("frictionDrag", turbine.frictionDragLastTick)
+			this.Set("aeroDrag", turbine.aeroDragLastTick)
+			this.Set("coilEfficiency", turbine.coilEfficiencyLastTick)
+			return this
+		})
+
+		return turbineGoToJS.New()
 	})
 
 	return jsonFunc

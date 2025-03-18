@@ -3,6 +3,7 @@
 <html>
 	<head>
 		<meta charset="utf-8"/>
+		<title>Optimizer Output</title>
 		<script src="wasm_exec.js"></script>
 		<script>
 			const go = new Go();
@@ -11,9 +12,21 @@
 				go.run(result.instance);
 			});
 		</script>
+		<style>
+			body { font-family: Arial, sans-serif; }
+			pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+			button { padding: 10px 15px; margin-bottom: 10px; cursor: pointer; }
+		</style>
 	</head>
 	<body>
-		<h1>Go WebAssembly Output:</h1>
-   		<div id="output"></div>
+		<button onclick="runAndDisplay()">Run Optimizer</button>
+		<pre id="output">Click the button to see results...</pre>
+		
+		<script>
+			function runAndDisplay() {
+				const result = runOptimizer(10, 10, "Ludicrite", 1000);
+				document.getElementById('output').textContent = JSON.stringify(result, null, 2);
+			}
+		</script>
 	</body>
 </html>

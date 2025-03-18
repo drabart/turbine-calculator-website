@@ -49,7 +49,6 @@ type Turbine struct {
 	rotorMass                      float64
 	linearBladeMetersPerRevolution float64
 
-	ventState   VentState
 	coilEngaged bool
 
 	rotorEnergy       float64
